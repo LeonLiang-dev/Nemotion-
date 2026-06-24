@@ -3,6 +3,7 @@ package com.wts.common.exception;
 import com.wts.common.result.R;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.catalina.connector.ClientAbortException;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.BindException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -47,6 +48,11 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public R<?> handleConstraintViolation(ConstraintViolationException e) {
         return R.fail(400, e.getMessage());
+    }
+
+    @ExceptionHandler(ClientAbortException.class)
+    public void handleClientAbortException(ClientAbortException e) {
+        log.debug("客户端已中断连接: {}", e.getMessage());
     }
 
     @ExceptionHandler(Exception.class)
