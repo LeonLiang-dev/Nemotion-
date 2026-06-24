@@ -1,0 +1,48 @@
+# Build outputs
+target/
+dist/
+*.jar
+*.war
+wts-server/wts-app/src/main/resources/static/
+packaging/windows/mariadb/*
+!packaging/windows/mariadb/README.md
+
+# Local agent tooling
+.agents/
+skills-lock.json
+
+# IDE
+.idea/
+*.iml
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Node
+node_modules/
+.pnpm-store/
+.umi/
+.umi-production/
+
+# Logs
+*.log
+logs/
+
+# Maven
+dependency-reduced-pom.xml
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+buildNumber.properties
+.mvn/timing.properties
+.mvn/wrapper/maven-wrapper.jar
+
+# Env
+.env
+.env.local

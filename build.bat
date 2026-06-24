@@ -1,0 +1,269 @@
+@echo off
+setlocal EnableExtensions
+
+rem ============================================================
+rem Leon Exam System Build Script (Windows)
+rem Usage:
+rem   build.bat           - Build executable JAR
+rem   build.bat preflight - Check Windows packaging prerequisites
+rem   build.bat package   - Build Windows EXE with jpackage
+rem ============================================================
+
+set "PROJECT_DIR=%~dp0"
+set "WEB_DIR=%PROJECT_DIR%wts-web"
+set "SERVER_DIR=%PROJECT_DIR%wts-server"
+set "LAUNCHER_DIR=%PROJECT_DIR%launcher"
+set "MARIADB_SOURCE_DIR=%PROJECT_DIR%packaging\windows\mariadb"
+set "STATIC_DIR=%SERVER_DIR%\wts-app\src\main\resources\static"
+set "JAR_NAME=wts-app-2.0.0-SNAPSHOT.jar"
+set "JAR_PATH=%SERVER_DIR%\wts-app\target\%JAR_NAME%"
+set "LAUNCHER_JAR=%LAUNCHER_DIR%\target\leon-exam-launcher-2.0.0.jar"
+set "DIST_DIR=%PROJECT_DIR%dist"
+set "JPACKAGE_DIR=%DIST_DIR%\jpackage"
+set "PAYLOAD_DIR=%DIST_DIR%\windows-payload"
+set "PACKAGE_MODE=0"
+
+echo ==========================================
+echo   Leon Exam System Build
+echo ==========================================
+
+if "%~1"=="" goto build
+if /i "%~1"=="preflight" goto preflight_only
+if /i "%~1"=="package" goto package_mode
+
+echo ERROR: Unknown command "%~1"
+echo Usage:
+echo   build.bat
+echo   build.bat preflight
+echo   build.bat package
+exit /b 1
+
+:preflight_only
+call :preflight_package
+if errorlevel 1 exit /b 1
+exit /b 0
+
+:package_mode
+set "PACKAGE_MODE=1"
+call :preflight_package
+if errorlevel 1 exit /b 1
+
+:build
+rem Step 1: Build frontend
+echo.
+echo [1/3] Building frontend...
+cd /d "%WEB_DIR%" || exit /b 1
+if exist "%WEB_DIR%\node_modules\.bin\max.cmd" (
+    call "%WEB_DIR%\node_modules\.bin\max.cmd" build
+) else if exist "%WEB_DIR%\node_modules\.bin\max" (
+    call "%WEB_DIR%\node_modules\.bin\max" build
+) else (
+    echo ERROR: Frontend dependencies are not installed.
+    echo Run:
+    echo   cd /d "%WEB_DIR%"
+    echo   npm install --registry=https://registry.npmmirror.com
+    exit /b 1
+)
+
+if errorlevel 1 (
+    echo ERROR: Frontend build command failed.
+    exit /b 1
+)
+
+if not exist "%WEB_DIR%\dist" (
+    echo ERROR: Frontend build failed.
+    exit /b 1
+)
+
+rem Step 2: Copy frontend to Spring Boot static
+echo.
+echo [2/3] Copying frontend assets...
+if exist "%STATIC_DIR%" rmdir /s /q "%STATIC_DIR%"
+mkdir "%STATIC_DIR%" || exit /b 1
+xcopy /e /i /q "%WEB_DIR%\dist\*" "%STATIC_DIR%\"
+if errorlevel 1 (
+    echo ERROR: Failed to copy frontend assets.
+    exit /b 1
+)
+
+rem Step 3: Package backend JAR
+echo.
+echo [3/3] Packaging backend...
+cd /d "%SERVER_DIR%" || exit /b 1
+call mvn clean package -DskipTests -q
+if errorlevel 1 (
+    echo ERROR: Backend Maven package failed.
+    exit /b 1
+)
+
+if not exist "%JAR_PATH%" (
+    echo ERROR: JAR build failed: "%JAR_PATH%"
+    exit /b 1
+)
+
+if not exist "%DIST_DIR%" mkdir "%DIST_DIR%"
+copy "%JAR_PATH%" "%DIST_DIR%\" >nul
+if errorlevel 1 (
+    echo ERROR: Failed to copy JAR to dist.
+    exit /b 1
+)
+
+echo.
+echo ==========================================
+echo   Build complete.
+echo   JAR: %DIST_DIR%\%JAR_NAME%
+echo.
+echo   Run with:
+echo     java -jar %DIST_DIR%\%JAR_NAME% --spring.profiles.active=prod
+echo ==========================================
+
+if not "%PACKAGE_MODE%"=="1" (
+    endlocal
+    exit /b 0
+)
+
+echo.
+echo Building Windows installer with launcher, JRE, MariaDB and backend...
+
+echo.
+echo [package] Building launcher...
+cd /d "%LAUNCHER_DIR%" || exit /b 1
+call mvn clean package -q
+if errorlevel 1 (
+    echo ERROR: Launcher build failed.
+    exit /b 1
+)
+
+if not exist "%LAUNCHER_JAR%" (
+    echo ERROR: Launcher JAR not found: "%LAUNCHER_JAR%"
+    exit /b 1
+)
+
+if exist "%PAYLOAD_DIR%" rmdir /s /q "%PAYLOAD_DIR%"
+if exist "%JPACKAGE_DIR%" rmdir /s /q "%JPACKAGE_DIR%"
+mkdir "%PAYLOAD_DIR%\app" || exit /b 1
+mkdir "%PAYLOAD_DIR%\sql" || exit /b 1
+
+copy "%LAUNCHER_JAR%" "%PAYLOAD_DIR%\launcher.jar" >nul
+if errorlevel 1 exit /b 1
+copy "%JAR_PATH%" "%PAYLOAD_DIR%\app\%JAR_NAME%" >nul
+if errorlevel 1 exit /b 1
+xcopy /e /i /q "%PROJECT_DIR%sql" "%PAYLOAD_DIR%\sql" >nul
+if errorlevel 1 exit /b 1
+xcopy /e /i /q "%MARIADB_SOURCE_DIR%" "%PAYLOAD_DIR%\mariadb" >nul
+if errorlevel 1 exit /b 1
+mkdir "%JPACKAGE_DIR%" || exit /b 1
+
+jpackage ^
+    --name LeonExam ^
+    --type exe ^
+    --dest "%JPACKAGE_DIR%" ^
+    --input "%PAYLOAD_DIR%" ^
+    --main-jar launcher.jar ^
+    --main-class com.wts.launcher.LeonExamLauncher ^
+    --java-options "-Dfile.encoding=UTF-8" ^
+    --win-dir-chooser ^
+    --win-shortcut ^
+    --win-menu ^
+    --app-version 2.0.1 ^
+    --description "Leon Exam System" ^
+    --vendor "Leon"
+if errorlevel 1 (
+    echo ERROR: jpackage failed.
+    exit /b 1
+)
+
+echo.
+echo ==========================================
+echo   Windows installer built.
+echo   Location: %JPACKAGE_DIR%
+echo ==========================================
+
+endlocal
+exit /b 0
+
+:preflight_package
+echo.
+echo [preflight] Checking Windows packaging prerequisites...
+
+where java >nul 2>nul
+if errorlevel 1 (
+    echo ERROR: java not found. Install JDK 17+ and add it to PATH.
+    exit /b 1
+)
+
+where jpackage >nul 2>nul
+if errorlevel 1 (
+    echo ERROR: jpackage not found. Use a full JDK 17+ on the Windows build machine.
+    exit /b 1
+)
+
+where mvn >nul 2>nul
+if errorlevel 1 (
+    echo ERROR: mvn not found. Install Maven 3.8+ and add it to PATH.
+    exit /b 1
+)
+
+where node >nul 2>nul
+if errorlevel 1 (
+    echo ERROR: node not found. Install Node.js 18+ and add it to PATH.
+    exit /b 1
+)
+
+if not exist "%WEB_DIR%\node_modules\.bin\max.cmd" if not exist "%WEB_DIR%\node_modules\.bin\max" (
+    echo ERROR: Frontend dependencies are not installed.
+    echo Run:
+    echo   cd /d "%WEB_DIR%"
+    echo   npm install --registry=https://registry.npmmirror.com
+    exit /b 1
+)
+
+where candle.exe >nul 2>nul
+if errorlevel 1 (
+    echo ERROR: WiX candle.exe not found. Install WiX Toolset 3.x and add it to PATH.
+    exit /b 1
+)
+
+where light.exe >nul 2>nul
+if errorlevel 1 (
+    echo ERROR: WiX light.exe not found. Install WiX Toolset 3.x and add it to PATH.
+    exit /b 1
+)
+
+if not exist "%PROJECT_DIR%sql\init\wts.v1.4.1.sql" (
+    echo ERROR: Missing init SQL: "%PROJECT_DIR%sql\init\wts.v1.4.1.sql"
+    exit /b 1
+)
+
+if not exist "%PROJECT_DIR%sql\migrations\V2_add_point_column.sql" (
+    echo ERROR: Missing migration SQL: "%PROJECT_DIR%sql\migrations\V2_add_point_column.sql"
+    exit /b 1
+)
+
+if not exist "%MARIADB_SOURCE_DIR%\bin\mysqld.exe" (
+    echo ERROR: MariaDB mysqld.exe not found.
+    echo Put the extracted Windows MariaDB ZIP under:
+    echo   "%MARIADB_SOURCE_DIR%"
+    exit /b 1
+)
+
+if not exist "%MARIADB_SOURCE_DIR%\bin\mysql.exe" (
+    echo ERROR: MariaDB mysql.exe not found: "%MARIADB_SOURCE_DIR%\bin\mysql.exe"
+    exit /b 1
+)
+
+if not exist "%MARIADB_SOURCE_DIR%\bin\mysqladmin.exe" (
+    echo ERROR: MariaDB mysqladmin.exe not found: "%MARIADB_SOURCE_DIR%\bin\mysqladmin.exe"
+    exit /b 1
+)
+
+if not exist "%MARIADB_SOURCE_DIR%\bin\mariadb-install-db.exe" if not exist "%MARIADB_SOURCE_DIR%\bin\mysql_install_db.exe" (
+    echo ERROR: MariaDB install-db command not found.
+    echo Required one of:
+    echo   "%MARIADB_SOURCE_DIR%\bin\mariadb-install-db.exe"
+    echo   "%MARIADB_SOURCE_DIR%\bin\mysql_install_db.exe"
+    exit /b 1
+)
+
+echo [preflight] OK.
+exit /b 0

@@ -1,0 +1,24 @@
+package com.wts.exam.entity;
+
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
+import com.baomidou.mybatisplus.annotation.IdType;
+import lombok.Data;
+import java.io.Serializable;
+
+@Data
+@TableName("wts_card_answer")
+public class ExamCardAnswer implements Serializable {
+
+    @TableId(type = IdType.INPUT)
+    private String id;
+
+    private String cardid;
+    private String answerid;
+    private String versionid;
+    private String cuser;
+    private String valstr;
+    private String ctime;
+    private String pcontent;
+    private String pstate;
+}
