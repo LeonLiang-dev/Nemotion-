@@ -159,7 +159,7 @@ wts-server/wts-app/src/main/resources/application-dev.yml
 ```yaml
 spring:
   datasource:
-    url: jdbc:mysql://localhost:3306/wts?useUnicode=true&characterEncoding=utf8mb4&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+    url: jdbc:mysql://localhost:3306/wts?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
     username: root
     password: 12345678
 ```

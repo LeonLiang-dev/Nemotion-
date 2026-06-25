@@ -408,6 +408,7 @@ public final class LeonExamLauncher {
         Files.createDirectories(configDir);
         Path configFile = configDir.resolve("application.yml");
         if (Files.exists(configFile)) {
+            repairApplicationConfig(configFile);
             appendLog("使用已有配置文件: " + configFile);
             return configFile;
         }
@@ -418,7 +419,7 @@ public final class LeonExamLauncher {
 
                 spring:
                   datasource:
-                    url: jdbc:mysql://127.0.0.1:3307/wts?useUnicode=true&characterEncoding=utf8mb4&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+                    url: jdbc:mysql://127.0.0.1:3307/wts?useUnicode=true&characterEncoding=UTF-8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
                     username: root
                     password: ""
 
@@ -435,6 +436,17 @@ public final class LeonExamLauncher {
         Files.writeString(configFile, yaml, StandardCharsets.UTF_8);
         appendLog("已创建默认配置文件: " + configFile);
         return configFile;
+    }
+
+    private void repairApplicationConfig(Path configFile) throws IOException {
+        String content = Files.readString(configFile, StandardCharsets.UTF_8);
+        String repaired = content
+                .replace("characterEncoding=utf8mb4", "characterEncoding=UTF-8")
+                .replace("characterEncoding=utf8", "characterEncoding=UTF-8");
+        if (!content.equals(repaired)) {
+            Files.writeString(configFile, repaired, StandardCharsets.UTF_8);
+            appendLog("已修复配置文件中的 JDBC 字符编码参数。");
+        }
     }
 
     private void startServer(Path appJar, Path configFile) throws IOException {
