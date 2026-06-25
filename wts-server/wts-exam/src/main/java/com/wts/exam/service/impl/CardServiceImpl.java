@@ -90,11 +90,13 @@ public class CardServiceImpl implements CardService {
         card.setPoint(0f);
         card.setCompletenum(0);
         card.setAllnum(0);
+        card.setOvertime("0");
         card.setStarttime(now);
         card.setEndtime(room.getEndtime());
         card.setResultstype(room.getResultstype());
         card.setRoomuuid(roomId);
         card.setPaperuuid(roomPapers.get(0).getPaperid());
+        card.setStatistical("0");
         cardMapper.insert(card);
         return card;
     }

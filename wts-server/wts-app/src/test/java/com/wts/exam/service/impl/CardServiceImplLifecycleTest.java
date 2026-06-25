@@ -189,6 +189,8 @@ class CardServiceImplLifecycleTest {
         assertEquals("user-1", card.getUserid());
         assertEquals("11", card.getPstate());
         assertEquals(0f, card.getPoint());
+        assertEquals("0", card.getOvertime());
+        assertEquals("0", card.getStatistical());
         verify(cardMapper).insert(card);
     }
 
