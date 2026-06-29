@@ -27,7 +27,7 @@ set "RUNTIME_DIR=%DIST_DIR%\runtime-image"
 set "PACKAGE_MODE=0"
 set "INSTALLER_TYPE=msi"
 set "WIN_CONSOLE_OPTION="
-set "APP_VERSION=2.0.14"
+set "APP_VERSION=2.0.15"
 set "WIN_UPGRADE_UUID=B7049603-F325-4AC9-B9E2-46CA1AA46E95"
 
 echo ==========================================
@@ -295,6 +295,16 @@ if errorlevel 1 (
 
 if not exist "%PROJECT_DIR%sql\init\wts.v1.4.1.sql" (
     echo ERROR: Missing init SQL: "%PROJECT_DIR%sql\init\wts.v1.4.1.sql"
+    exit /b 1
+)
+
+if not exist "%PROJECT_DIR%sql\init\wts.empty.sql" (
+    echo ERROR: Missing empty init SQL: "%PROJECT_DIR%sql\init\wts.empty.sql"
+    exit /b 1
+)
+
+if not exist "%PROJECT_DIR%sql\init\wts.clean-seed.sql" (
+    echo ERROR: Missing clean seed SQL: "%PROJECT_DIR%sql\init\wts.clean-seed.sql"
     exit /b 1
 )
 

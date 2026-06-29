@@ -132,17 +132,18 @@ cd Nemotion-
 mysql -u root -p -e "CREATE DATABASE wts DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;"
 ```
 
-导入完整初始化脚本：
-
-```bash
-mysql -u root -p wts < sql/init/wts.v1.4.1.sql
-mysql -u root -p wts < sql/migrations/V2_add_point_column.sql
-```
-
-如果只需要空库结构，不需要示例/历史数据：
+导入干净初始化脚本：
 
 ```bash
 mysql -u root -p wts < sql/init/wts.empty.sql
+mysql -u root -p wts < sql/init/wts.clean-seed.sql
+mysql -u root -p wts < sql/migrations/V2_add_point_column.sql
+```
+
+如果需要参考原始 WTS 演示/历史数据，可手动导入完整初始化脚本：
+
+```bash
+mysql -u root -p wts < sql/init/wts.v1.4.1.sql
 mysql -u root -p wts < sql/migrations/V2_add_point_column.sql
 ```
 
@@ -204,24 +205,26 @@ http://localhost:8000
 
 | 文件 | 说明 |
 |------|------|
-| `sql/init/wts.v1.4.1.sql` | 完整初始化脚本，包含基础权限、管理员账号和示例/历史数据 |
 | `sql/init/wts.empty.sql` | 空库结构脚本，仅包含表结构，不包含 `INSERT` 数据 |
+| `sql/init/wts.clean-seed.sql` | 干净初始化种子，仅包含默认组织和内置超级管理员 `sysadmin` |
+| `sql/init/wts.v1.4.1.sql` | 原始完整初始化脚本，包含基础权限、管理员账号和示例/历史数据 |
+| `sql/maintenance/reset_to_clean_admin.sql` | 手工清库脚本，用于把已有数据库重置为仅保留 `sysadmin` |
 | `sql/migrations/V2_add_point_column.sql` | 增量迁移脚本，给题目表增加默认分值字段 |
 | `wts-server/wts-app/src/main/resources/db/` | 后端内置的 Flyway 风格结构脚本 |
 
 说明：
 
-- Windows 教师机安装包默认使用 `sql/init/wts.v1.4.1.sql` 初始化，便于首次运行后直接登录和使用。
-- 如果你要部署一个完全干净的数据库，可以手动使用 `wts.empty.sql`。
+- Windows 教师机安装包默认使用 `wts.empty.sql` + `wts.clean-seed.sql` 初始化，首次安装只保留内置管理员，不包含题目、试卷、答题室、学生和答卷演示数据。
+- `wts.v1.4.1.sql` 仅作为原始 WTS 数据参考或手工演示库使用。
+- 如果某台机器已经初始化过演示数据，升级安装包不会自动清库；需要删除 `C:\ProgramData\LeonExam\mysql` 重新初始化，或手工执行 `sql/maintenance/reset_to_clean_admin.sql`。
 
 ## 默认账号
 
-完整初始化脚本中包含默认管理账号：
+干净初始化脚本中包含默认管理账号：
 
 | 账号 | 密码 | 说明 |
 |------|------|------|
-| `sysadmin` | `12345678` | 系统管理员 |
-| `admin` | `12345678` | 管理员 |
+| `sysadmin` | `123456` | 内置超级管理员 |
 
 生产环境部署后请尽快修改默认密码。
 

@@ -194,17 +194,19 @@ public final class LeonExamLauncher {
 
         Path appJar = appDir.resolve("app").resolve(APP_JAR_NAME);
         Path mariaDbDir = appDir.resolve("mariadb");
-        Path sqlInit = appDir.resolve("sql").resolve("init").resolve("wts.v1.4.1.sql");
+        Path sqlInit = appDir.resolve("sql").resolve("init").resolve("wts.empty.sql");
+        Path sqlSeed = appDir.resolve("sql").resolve("init").resolve("wts.clean-seed.sql");
         Path sqlMigrationsDir = appDir.resolve("sql").resolve("migrations");
         requireFile(appJar, "后端 JAR");
-        requireFile(sqlInit, "初始化 SQL");
+        requireFile(sqlInit, "初始化结构 SQL");
+        requireFile(sqlSeed, "初始化种子 SQL");
         requireFile(mariaDbDir.resolve("bin").resolve(executable("mysqld")), "MariaDB mysqld");
         requireFile(mariaDbDir.resolve("bin").resolve(executable("mysql")), "MariaDB mysql client");
 
         initDatabaseFiles(mariaDbDir);
         startDatabase(mariaDbDir);
         waitForDatabase(mariaDbDir);
-        initializeSchemaIfNeeded(mariaDbDir, sqlInit, sqlMigrationsDir);
+        initializeSchemaIfNeeded(mariaDbDir, sqlInit, sqlSeed, sqlMigrationsDir);
 
         Path configFile = writeApplicationConfig();
         startServer(appJar, configFile);
@@ -343,7 +345,7 @@ public final class LeonExamLauncher {
         throw new IllegalStateException("MariaDB 启动超时");
     }
 
-    private void initializeSchemaIfNeeded(Path mariaDbDir, Path sqlInit, Path sqlMigrationsDir)
+    private void initializeSchemaIfNeeded(Path mariaDbDir, Path sqlInit, Path sqlSeed, Path sqlMigrationsDir)
             throws IOException, InterruptedException {
         Path marker = dataRoot.resolve(".db-initialized");
         appendLog("正在创建数据库 wts...");
@@ -353,8 +355,10 @@ public final class LeonExamLauncher {
         if (Files.exists(marker)) {
             appendLog("数据库已初始化，检查增量迁移。");
         } else {
-            appendLog("正在导入初始化 SQL，可能需要数分钟...");
+            appendLog("正在导入初始化结构 SQL，可能需要数分钟...");
             runMysql(mariaDbDir, "wts", List.of("--default-character-set=utf8mb4"), sqlInit);
+            appendLog("正在导入干净初始化数据...");
+            runMysql(mariaDbDir, "wts", List.of("--default-character-set=utf8mb4"), sqlSeed);
             Files.writeString(marker, "initialized", StandardCharsets.UTF_8);
             appendLog("数据库基础结构初始化完成。");
         }
