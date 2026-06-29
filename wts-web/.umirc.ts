@@ -45,6 +45,11 @@ export default defineConfig({
       component: './Exam/Card/Judge',
     },
     {
+      path: '/exam/room/:roomId/cards',
+      component: './Exam/Room/CardList',
+      access: 'isAdmin',
+    },
+    {
       path: '/',
       redirect: '/login',
     },
@@ -80,12 +85,6 @@ export default defineConfig({
           name: '答题室管理',
           path: '/exam/room',
           component: './Exam/Room',
-        },
-        {
-          name: '答卷列表',
-          path: '/exam/room/:roomId/cards',
-          component: './Exam/Room/CardList',
-          hideInMenu: true,
         },
         {
           name: '随机组卷',
