@@ -203,10 +203,10 @@ public final class LeonExamLauncher {
         requireFile(mariaDbDir.resolve("bin").resolve(executable("mysqld")), "MariaDB mysqld");
         requireFile(mariaDbDir.resolve("bin").resolve(executable("mysql")), "MariaDB mysql client");
 
-        initDatabaseFiles(mariaDbDir);
+        boolean existingDatabase = initDatabaseFiles(mariaDbDir);
         startDatabase(mariaDbDir);
         waitForDatabase(mariaDbDir);
-        initializeSchemaIfNeeded(mariaDbDir, sqlInit, sqlSeed, sqlMigrationsDir);
+        initializeSchemaIfNeeded(mariaDbDir, sqlInit, sqlSeed, sqlMigrationsDir, existingDatabase);
 
         Path configFile = writeApplicationConfig();
         startServer(appJar, configFile);
@@ -223,11 +223,11 @@ public final class LeonExamLauncher {
         openBrowser(teacherUrl);
     }
 
-    private void initDatabaseFiles(Path mariaDbDir) throws IOException, InterruptedException {
+    private boolean initDatabaseFiles(Path mariaDbDir) throws IOException, InterruptedException {
         Path mysqlData = dataRoot.resolve("mysql");
         if (isInitializedDatabaseDirectory(mysqlData)) {
             appendLog("检测到已有数据库数据目录，跳过初始化。");
-            return;
+            return true;
         }
         appendLog("首次运行，正在初始化 MariaDB 数据目录...");
 
@@ -247,6 +247,7 @@ public final class LeonExamLauncher {
                 "--basedir=" + mariaDbDir,
                 "--datadir=" + mysqlData));
         initializeDatabaseDirectory(mariaDbDir, mysqlData, commands);
+        return false;
     }
 
     private void initializeDatabaseDirectory(Path mariaDbDir, Path mysqlData, List<List<String>> commands)
@@ -345,28 +346,36 @@ public final class LeonExamLauncher {
         throw new IllegalStateException("MariaDB 启动超时");
     }
 
-    private void initializeSchemaIfNeeded(Path mariaDbDir, Path sqlInit, Path sqlSeed, Path sqlMigrationsDir)
+    private void initializeSchemaIfNeeded(Path mariaDbDir, Path sqlInit, Path sqlSeed, Path sqlMigrationsDir,
+                                          boolean existingDatabase)
             throws IOException, InterruptedException {
-        Path marker = dataRoot.resolve(".db-initialized");
+        Path mysqlData = dataRoot.resolve("mysql");
+        Path marker = mysqlData.resolve(".db-initialized");
+        Path legacyMarker = dataRoot.resolve(".db-initialized");
         appendLog("正在创建数据库 wts...");
         runMysql(mariaDbDir, null, List.of("-e",
                 "CREATE DATABASE IF NOT EXISTS wts DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;"), null);
 
-        if (Files.exists(marker)) {
+        boolean legacyInitialized = existingDatabase && Files.exists(legacyMarker);
+        if (Files.exists(marker) || legacyInitialized) {
+            if (legacyInitialized && !Files.exists(marker)) {
+                Files.writeString(marker, "initialized", StandardCharsets.UTF_8);
+            }
             appendLog("数据库已初始化，检查增量迁移。");
         } else {
             appendLog("正在导入初始化结构 SQL，可能需要数分钟...");
             runMysql(mariaDbDir, "wts", List.of("--default-character-set=utf8mb4"), sqlInit);
             appendLog("正在导入干净初始化数据...");
             runMysql(mariaDbDir, "wts", List.of("--default-character-set=utf8mb4"), sqlSeed);
+            Files.createDirectories(marker.getParent());
             Files.writeString(marker, "initialized", StandardCharsets.UTF_8);
             appendLog("数据库基础结构初始化完成。");
         }
-        runPendingMigrations(mariaDbDir, sqlMigrationsDir);
+        runPendingMigrations(mariaDbDir, sqlMigrationsDir, existingDatabase);
         appendLog("数据库初始化完成。");
     }
 
-    private void runPendingMigrations(Path mariaDbDir, Path sqlMigrationsDir)
+    private void runPendingMigrations(Path mariaDbDir, Path sqlMigrationsDir, boolean existingDatabase)
             throws IOException, InterruptedException {
         if (!Files.isDirectory(sqlMigrationsDir)) {
             appendLog("未发现增量迁移目录，跳过。");
@@ -387,13 +396,19 @@ public final class LeonExamLauncher {
             return;
         }
 
-        Path markerDir = dataRoot.resolve(".migrations");
+        Path markerDir = dataRoot.resolve("mysql").resolve(".migrations");
+        Path legacyMarkerDir = dataRoot.resolve(".migrations");
         Files.createDirectories(markerDir);
         boolean executed = false;
         for (Path migration : migrations) {
             String fileName = migration.getFileName().toString();
             Path migrationMarker = markerDir.resolve(fileName + ".applied");
-            if (Files.exists(migrationMarker)) {
+            Path legacyMigrationMarker = legacyMarkerDir.resolve(fileName + ".applied");
+            boolean legacyApplied = existingDatabase && Files.exists(legacyMigrationMarker);
+            if (Files.exists(migrationMarker) || legacyApplied) {
+                if (legacyApplied && !Files.exists(migrationMarker)) {
+                    Files.writeString(migrationMarker, "applied", StandardCharsets.UTF_8);
+                }
                 continue;
             }
             appendLog("正在执行增量迁移 SQL: " + fileName);

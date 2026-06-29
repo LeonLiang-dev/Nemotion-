@@ -216,7 +216,7 @@ http://localhost:8000
 
 - Windows 教师机安装包默认使用 `wts.empty.sql` + `wts.clean-seed.sql` 初始化，首次安装只保留内置管理员，不包含题目、试卷、答题室、学生和答卷演示数据。
 - `wts.v1.4.1.sql` 仅作为原始 WTS 数据参考或手工演示库使用。
-- 如果某台机器已经初始化过演示数据，升级安装包不会自动清库；需要删除 `C:\ProgramData\LeonExam\mysql` 重新初始化，或手工执行 `sql/maintenance/reset_to_clean_admin.sql`。
+- 如果某台机器已经初始化过演示数据，升级安装包不会自动清库；从 `2.0.16` 起可删除 `C:\ProgramData\LeonExam\mysql` 后重新初始化，或手工执行 `sql/maintenance/reset_to_clean_admin.sql`。
 
 ## 默认账号
 
