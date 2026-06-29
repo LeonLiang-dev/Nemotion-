@@ -185,6 +185,19 @@ class RoomServiceImplParticipationTest {
 
         assertEquals("21", room.getPstate());
         assertEquals("room-name", room.getName());
+        assertEquals("teacher-1", room.getCuser());
+        assertEquals("Teacher One", room.getCusername());
+        assertEquals("teacher-1", room.getEuser());
+        assertEquals("Teacher One", room.getEusername());
+        assertEquals("", room.getDuser());
+        assertEquals("", room.getDusername());
+        assertEquals("", room.getDtime());
+        assertEquals("", room.getPcontent());
+        assertEquals("", room.getImgid());
+        assertEquals("1", room.getType());
+        assertEquals("0", room.getStatistical());
+        assertEquals("0", room.getTypemodel());
+        assertEquals("0", room.getPapervmodel());
         verify(roomMapper).insert(room);
     }
 

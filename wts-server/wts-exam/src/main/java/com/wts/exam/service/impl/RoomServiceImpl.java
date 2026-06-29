@@ -110,7 +110,7 @@ public class RoomServiceImpl implements RoomService {
         room.setId(UUID.randomUUID().toString().replace("-", ""));
         room.setUuid(room.getId());
         room.setName(dto.getName());
-        room.setRoomnote(dto.getRoomnote());
+        room.setRoomnote(valueOrEmpty(dto.getRoomnote()));
         room.setExamtypeid(dto.getExamtypeid());
         room.setTimelen(dto.getTimelen() != null ? dto.getTimelen() : 60);
         room.setTimetype(dto.getTimetype() != null ? dto.getTimetype() : "1");
@@ -130,6 +130,19 @@ public class RoomServiceImpl implements RoomService {
         String now = ExamTimeUtils.nowCompact();
         room.setCtime(now);
         room.setEtime(now);
+        room.setCuser(valueOrEmpty(operatorId));
+        room.setCusername(valueOrEmpty(operatorName));
+        room.setEuser(valueOrEmpty(operatorId));
+        room.setEusername(valueOrEmpty(operatorName));
+        room.setDuser("");
+        room.setDusername("");
+        room.setDtime("");
+        room.setPcontent("");
+        room.setImgid("");
+        room.setType("1");
+        room.setStatistical("0");
+        room.setTypemodel("0");
+        room.setPapervmodel("0");
         roomMapper.insert(room);
         return room;
     }
@@ -161,6 +174,8 @@ public class RoomServiceImpl implements RoomService {
         room.setStarttime(starttime);
         room.setEndtime(endtime);
         room.setPstate(normalizeRoomState(dto.getPstate(), room.getPstate()));
+        room.setEtime(ExamTimeUtils.nowCompact());
+        room.setEuser(valueOrEmpty(operatorId));
         roomMapper.updateById(room);
         return room;
     }
@@ -373,5 +388,9 @@ public class RoomServiceImpl implements RoomService {
             throw BizException.fail("答题室状态无效");
         }
         return pstate;
+    }
+
+    private String valueOrEmpty(String value) {
+        return value != null ? value : "";
     }
 }
