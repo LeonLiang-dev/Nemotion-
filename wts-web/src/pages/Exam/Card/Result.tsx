@@ -4,6 +4,7 @@ import { Card, Tag, Spin, Statistic, Row, Col, Divider, Button, Space, Result } 
 import { CheckCircleOutlined, CloseCircleOutlined, MinusCircleOutlined } from '@ant-design/icons';
 import { getCardResult } from '@/services/exam';
 import { getRequestErrorMessage } from '@/utils/examTime';
+import AnswerValueView from './AnswerValueView';
 
 const TIPTYPE_LABELS: Record<string, string> = {
   '1': '填空题', '2': '单选题', '3': '多选题',
@@ -162,9 +163,11 @@ const ExamResultPage: React.FC = () => {
                 {cardAns.length > 0 ? (
                   <div>
                     <span style={{ color: '#666' }}>你的答案：</span>
-                    {cardAns.map((a: any) => (
-                      <Tag key={a.id} style={{ marginRight: 4 }}>{a.valstr}</Tag>
-                    ))}
+                    <Space wrap align="start" style={{ marginLeft: 4 }}>
+                      {cardAns.map((a: any) => (
+                        <AnswerValueView key={a.id} value={a.valstr} />
+                      ))}
+                    </Space>
                   </div>
                 ) : (
                   <span style={{ color: '#999' }}>未作答</span>

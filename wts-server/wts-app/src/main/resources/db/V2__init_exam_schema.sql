@@ -391,7 +391,7 @@ CREATE TABLE IF NOT EXISTS wts_card_answer (
     ANSWERID    varchar(32),
     VERSIONID   varchar(32),
     CUSER       varchar(32),
-    VALSTR      text,
+    VALSTR      mediumtext,
     CTIME       varchar(16),
     PCONTENT    varchar(256),
     PSTATE      varchar(2),

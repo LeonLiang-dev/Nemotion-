@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, history } from '@umijs/max';
 import { Button, message, Spin, Card, InputNumber, Tag, Space, Divider, Modal } from 'antd';
 import { getCardPaperForReview, getCardResult, judgeCard } from '@/services/exam';
+import AnswerValueView from './AnswerValueView';
 
 const TIPTYPE_LABELS: Record<string, string> = {
   '1': '填空题', '2': '单选题', '3': '多选题',
@@ -158,9 +159,9 @@ const JudgePage: React.FC = () => {
               <>
                 <div className="wts-judge-answer-box">
                   <strong>用户答案：</strong>
-                  <div style={{ marginTop: 4, whiteSpace: 'pre-wrap' }}>
+                  <div style={{ marginTop: 4, display: 'flex', flexDirection: 'column', gap: 8 }}>
                     {userAnswers.length > 0
-                      ? userAnswers.map((a: any) => a.valstr).join('\n')
+                      ? userAnswers.map((a: any) => <AnswerValueView key={a.id} value={a.valstr} block />)
                       : <span style={{ color: '#999' }}>未作答</span>}
                   </div>
                 </div>
@@ -181,7 +182,7 @@ const JudgePage: React.FC = () => {
                 <span>
                   用户答案：
                   {userAnswers.length > 0
-                    ? userAnswers.map((a: any) => <Tag key={a.id}>{a.valstr}</Tag>)
+                    ? userAnswers.map((a: any) => <AnswerValueView key={a.id} value={a.valstr} />)
                     : <span style={{ color: '#999' }}>未作答</span>}
                 </span>
                 <span>

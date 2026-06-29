@@ -481,7 +481,7 @@ CREATE TABLE IF NOT EXISTS `wts_card_answer` (
   `ANSWERID` varchar(32) DEFAULT NULL,
   `VERSIONID` varchar(32) NOT NULL,
   `CUSER` varchar(32) NOT NULL DEFAULT '',
-  `VALSTR` text NOT NULL,
+  `VALSTR` mediumtext NOT NULL,
   `CTIME` varchar(16) NOT NULL,
   `PCONTENT` varchar(256) DEFAULT NULL,
   `PSTATE` varchar(2) NOT NULL,
