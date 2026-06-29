@@ -57,6 +57,8 @@ public class SubjectTypeServiceImpl implements SubjectTypeService {
         type.setUtime(now);
         type.setCuser(operatorId);
         type.setMuser(operatorId);
+        if (type.getReadpop() == null || type.getReadpop().isBlank()) type.setReadpop("1");
+        if (type.getWritepop() == null || type.getWritepop().isBlank()) type.setWritepop("1");
         if (type.getSort() == null) type.setSort(1);
         if (type.getParentid() == null || type.getParentid().isEmpty()) {
             type.setParentid("NONE");

@@ -89,13 +89,14 @@ public class SubjectServiceImpl implements SubjectService {
         version.setId(versionId);
         version.setSubjectid(subjectId);
         version.setTiptype(dto.getTiptype());
-        version.setTipstr(dto.getTipstr());
-        version.setTipnote(dto.getTipnote());
-        version.setPcontent(dto.getPcontent());
+        version.setTipstr(valueOrEmpty(dto.getTipstr()));
+        version.setTipnote(valueOrEmpty(dto.getTipnote()));
+        version.setPcontent(valueOrEmpty(dto.getPcontent()));
         version.setCtime(now);
-        version.setCuser(operatorId);
-        version.setCusername(operatorName);
+        version.setCuser(valueOrEmpty(operatorId));
+        version.setCusername(valueOrEmpty(operatorName));
         version.setPstate("1");
+        version.setAnswered("0");
         versionMapper.insert(version);
 
         // Create answers
@@ -104,16 +105,16 @@ public class SubjectServiceImpl implements SubjectService {
                 ExamSubjectAnswer answer = new ExamSubjectAnswer();
                 answer.setId(UUID.randomUUID().toString().replace("-", ""));
                 answer.setVersionid(versionId);
-                answer.setAnswer(ansDto.getAnswer());
-                answer.setAnswernote(ansDto.getAnswernote());
-                answer.setRightanswer(ansDto.getRightanswer());
-                answer.setSort(ansDto.getSort());
-                answer.setPointweight(ansDto.getPointweight());
+                answer.setAnswer(valueOrEmpty(ansDto.getAnswer()));
+                answer.setAnswernote(valueOrEmpty(ansDto.getAnswernote()));
+                answer.setRightanswer(valueOrDefault(ansDto.getRightanswer(), "0"));
+                answer.setSort(ansDto.getSort() != null ? ansDto.getSort() : 1);
+                answer.setPointweight(ansDto.getPointweight() != null ? ansDto.getPointweight() : 0);
                 answer.setGroupno(ansDto.getGroupno());
-                answer.setPcontent(ansDto.getPcontent());
+                answer.setPcontent(valueOrEmpty(ansDto.getPcontent()));
                 answer.setPstate("1");
-                answer.setCuser(operatorId);
-                answer.setCusername(operatorName);
+                answer.setCuser(valueOrEmpty(operatorId));
+                answer.setCusername(valueOrEmpty(operatorName));
                 answer.setCtime(now);
                 answer.setUuid(answer.getId());
                 answerMapper.insert(answer);
@@ -137,13 +138,14 @@ public class SubjectServiceImpl implements SubjectService {
         version.setId(newVersionId);
         version.setSubjectid(id);
         version.setTiptype(dto.getTiptype());
-        version.setTipstr(dto.getTipstr());
-        version.setTipnote(dto.getTipnote());
-        version.setPcontent(dto.getPcontent());
+        version.setTipstr(valueOrEmpty(dto.getTipstr()));
+        version.setTipnote(valueOrEmpty(dto.getTipnote()));
+        version.setPcontent(valueOrEmpty(dto.getPcontent()));
         version.setCtime(now);
-        version.setCuser(operatorId);
-        version.setCusername(operatorName);
+        version.setCuser(valueOrEmpty(operatorId));
+        version.setCusername(valueOrEmpty(operatorName));
         version.setPstate("1");
+        version.setAnswered("0");
         versionMapper.insert(version);
 
         // Create new answers for new version
@@ -152,16 +154,16 @@ public class SubjectServiceImpl implements SubjectService {
                 ExamSubjectAnswer answer = new ExamSubjectAnswer();
                 answer.setId(UUID.randomUUID().toString().replace("-", ""));
                 answer.setVersionid(newVersionId);
-                answer.setAnswer(ansDto.getAnswer());
-                answer.setAnswernote(ansDto.getAnswernote());
-                answer.setRightanswer(ansDto.getRightanswer());
-                answer.setSort(ansDto.getSort());
-                answer.setPointweight(ansDto.getPointweight());
+                answer.setAnswer(valueOrEmpty(ansDto.getAnswer()));
+                answer.setAnswernote(valueOrEmpty(ansDto.getAnswernote()));
+                answer.setRightanswer(valueOrDefault(ansDto.getRightanswer(), "0"));
+                answer.setSort(ansDto.getSort() != null ? ansDto.getSort() : 1);
+                answer.setPointweight(ansDto.getPointweight() != null ? ansDto.getPointweight() : 0);
                 answer.setGroupno(ansDto.getGroupno());
-                answer.setPcontent(ansDto.getPcontent());
+                answer.setPcontent(valueOrEmpty(ansDto.getPcontent()));
                 answer.setPstate("1");
-                answer.setCuser(operatorId);
-                answer.setCusername(operatorName);
+                answer.setCuser(valueOrEmpty(operatorId));
+                answer.setCusername(valueOrEmpty(operatorName));
                 answer.setCtime(now);
                 answer.setUuid(answer.getId());
                 answerMapper.insert(answer);
@@ -212,5 +214,13 @@ public class SubjectServiceImpl implements SubjectService {
                         .eq(ExamSubjectAnswer::getVersionid, versionId)
                         .orderByAsc(ExamSubjectAnswer::getSort)
         );
+    }
+
+    private String valueOrEmpty(String value) {
+        return value != null ? value : "";
+    }
+
+    private String valueOrDefault(String value, String defaultValue) {
+        return value != null && !value.isBlank() ? value : defaultValue;
     }
 }

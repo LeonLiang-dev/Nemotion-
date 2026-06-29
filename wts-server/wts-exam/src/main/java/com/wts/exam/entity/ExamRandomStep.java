@@ -21,4 +21,5 @@ public class ExamRandomStep implements Serializable {
     private String tiptype;
     private String typeid;
     private String knowid;
+    private String pcontent;
 }

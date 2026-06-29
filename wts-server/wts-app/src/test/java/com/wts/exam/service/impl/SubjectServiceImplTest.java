@@ -74,6 +74,8 @@ class SubjectServiceImplTest {
         assertEquals("题干", version.getTipstr());
         assertEquals("teacher-1", version.getCuser());
         assertEquals("Teacher One", version.getCusername());
+        assertEquals("正文", version.getPcontent());
+        assertEquals("0", version.getAnswered());
 
         ArgumentCaptor<ExamSubjectAnswer> answerCaptor = ArgumentCaptor.forClass(ExamSubjectAnswer.class);
         verify(answerMapper).insert(answerCaptor.capture());
@@ -84,6 +86,9 @@ class SubjectServiceImplTest {
         assertEquals(1, answer.getSort());
         assertEquals("teacher-1", answer.getCuser());
         assertEquals("Teacher One", answer.getCusername());
+        assertEquals("选项正文", answer.getPcontent());
+        assertEquals("答案说明", answer.getAnswernote());
+        assertEquals(100, answer.getPointweight());
         assertEquals(answer.getId(), answer.getUuid());
     }
 

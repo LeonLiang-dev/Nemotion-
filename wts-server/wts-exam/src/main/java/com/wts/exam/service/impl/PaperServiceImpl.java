@@ -56,6 +56,7 @@ public class PaperServiceImpl implements PaperService {
         paper.setAdvicetime(dto.getAdvicetime() != null ? dto.getAdvicetime() : 60);
         paper.setKnowid(dto.getKnowid());
         paper.setPstate("1");
+        paper.setPcontent("");
         paper.setSubjectnum(0);
         paper.setPointnum(0);
         paper.setCompletetnum(0);
@@ -66,6 +67,10 @@ public class PaperServiceImpl implements PaperService {
         String now = LocalDateTime.now().format(FMT);
         paper.setCtime(now);
         paper.setEtime(now);
+        paper.setCuser(valueOrEmpty(operatorId));
+        paper.setCusername(valueOrEmpty(operatorName));
+        paper.setEuser(valueOrEmpty(operatorId));
+        paper.setEusername(valueOrEmpty(operatorName));
         paperMapper.insert(paper);
 
         // Create default chapter
@@ -93,6 +98,8 @@ public class PaperServiceImpl implements PaperService {
         paper.setPapernote(dto.getPapernote());
         paper.setExamtypeid(dto.getExamtypeid());
         paper.setAdvicetime(dto.getAdvicetime());
+        paper.setEtime(LocalDateTime.now().format(FMT));
+        paper.setEuser(valueOrEmpty(operatorId));
         paperMapper.updateById(paper);
         return paper;
     }
@@ -202,5 +209,9 @@ public class PaperServiceImpl implements PaperService {
         return paperSubjectMapper.selectList(new LambdaQueryWrapper<ExamPaperSubject>()
                 .eq(ExamPaperSubject::getPaperid, paperId)
                 .orderByAsc(ExamPaperSubject::getSort));
+    }
+
+    private String valueOrEmpty(String value) {
+        return value != null ? value : "";
     }
 }

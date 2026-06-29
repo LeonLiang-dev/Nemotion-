@@ -15,4 +15,7 @@ public class ExamRandomItem implements Serializable {
 
     private String name;
     private String cuser;
+    private String ctime;
+    private String pstate;
+    private String pcontent;
 }

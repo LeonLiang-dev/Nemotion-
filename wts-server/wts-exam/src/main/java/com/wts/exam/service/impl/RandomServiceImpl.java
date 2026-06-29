@@ -41,7 +41,10 @@ public class RandomServiceImpl implements RandomService {
         ExamRandomItem item = new ExamRandomItem();
         item.setId(UUID.randomUUID().toString().replace("-", ""));
         item.setName(dto.getName());
-        item.setCuser(operatorId);
+        item.setCuser(valueOrEmpty(operatorId));
+        item.setCtime(LocalDateTime.now().format(FMT));
+        item.setPstate("1");
+        item.setPcontent("");
         itemMapper.insert(item);
         return item;
     }
@@ -89,12 +92,13 @@ public class RandomServiceImpl implements RandomService {
         step.setId(UUID.randomUUID().toString().replace("-", ""));
         step.setItemid(itemId);
         step.setName(dto.getName());
-        step.setSort(dto.getSort());
-        step.setSubnum(dto.getSubnum());
-        step.setSubpoint(dto.getSubpoint());
-        step.setTiptype(dto.getTiptype());
+        step.setSort(dto.getSort() != null ? dto.getSort() : 1);
+        step.setSubnum(dto.getSubnum() != null ? dto.getSubnum() : 0);
+        step.setSubpoint(dto.getSubpoint() != null ? dto.getSubpoint() : 0);
+        step.setTiptype(valueOrDefault(dto.getTiptype(), "2"));
         step.setTypeid(dto.getTypeid());
         step.setKnowid(dto.getKnowid());
+        step.setPcontent("");
         stepMapper.insert(step);
         return step;
     }
@@ -151,9 +155,13 @@ public class RandomServiceImpl implements RandomService {
             paper.setId(paperId);
             paper.setName(item.getName() + "-" + (n + 1));
             paper.setPstate("1");
+            paper.setPcontent("");
             paper.setCtime(now);
             paper.setEtime(now);
-            paper.setCuser(operatorId);
+            paper.setCuser(valueOrEmpty(operatorId));
+            paper.setCusername("");
+            paper.setEuser(valueOrEmpty(operatorId));
+            paper.setEusername("");
             paper.setUuid(paperId);
             paper.setSubjectnum(0);
             paper.setPointnum(0);
@@ -171,8 +179,11 @@ public class RandomServiceImpl implements RandomService {
             chapter.setPaperid(paperId);
             chapter.setName("默认章节");
             chapter.setSort(1);
+            chapter.setStype("1");
             chapter.setPtype("2");
             chapter.setInitpoint(0);
+            chapter.setParentid("NONE");
+            chapter.setTreecode(chapter.getId());
             chapterMapper.insert(chapter);
 
             int totalSubjects = 0;
@@ -243,5 +254,13 @@ public class RandomServiceImpl implements RandomService {
         }
 
         return paperIds;
+    }
+
+    private String valueOrEmpty(String value) {
+        return value != null ? value : "";
+    }
+
+    private String valueOrDefault(String value, String defaultValue) {
+        return value != null && !value.isBlank() ? value : defaultValue;
     }
 }

@@ -67,6 +67,24 @@ class RandomServiceImplTest {
     }
 
     @Test
+    void createItemFillsLegacyRequiredColumns() {
+        com.wts.exam.dto.RandomItemDTO dto = new com.wts.exam.dto.RandomItemDTO();
+        dto.setName("随机规则");
+
+        ExamRandomItem item = service.createItem(dto, "teacher-1");
+
+        ArgumentCaptor<ExamRandomItem> itemCaptor = ArgumentCaptor.forClass(ExamRandomItem.class);
+        verify(itemMapper).insert(itemCaptor.capture());
+        assertEquals(item, itemCaptor.getValue());
+        assertNotNull(item.getId());
+        assertEquals("随机规则", item.getName());
+        assertEquals("teacher-1", item.getCuser());
+        assertNotNull(item.getCtime());
+        assertEquals("1", item.getPstate());
+        assertEquals("", item.getPcontent());
+    }
+
+    @Test
     void generatePapersRejectsMissingItem() {
         when(itemMapper.selectById("missing")).thenReturn(null);
 
@@ -107,6 +125,10 @@ class RandomServiceImplTest {
         assertEquals(paper.getId(), paperIds.get(0));
         assertEquals("随机规则-1", paper.getName());
         assertEquals("teacher-1", paper.getCuser());
+        assertEquals("", paper.getCusername());
+        assertEquals("teacher-1", paper.getEuser());
+        assertEquals("", paper.getEusername());
+        assertEquals("", paper.getPcontent());
         assertEquals("1", paper.getPstate());
 
         ArgumentCaptor<ExamPaperChapter> chapterCaptor = ArgumentCaptor.forClass(ExamPaperChapter.class);
@@ -114,6 +136,10 @@ class RandomServiceImplTest {
         ExamPaperChapter chapter = chapterCaptor.getValue();
         assertEquals(paper.getId(), chapter.getPaperid());
         assertEquals("默认章节", chapter.getName());
+        assertEquals("1", chapter.getStype());
+        assertEquals("2", chapter.getPtype());
+        assertEquals("NONE", chapter.getParentid());
+        assertEquals(chapter.getId(), chapter.getTreecode());
 
         ArgumentCaptor<ExamPaperSubject> paperSubjectCaptor = ArgumentCaptor.forClass(ExamPaperSubject.class);
         verify(paperSubjectMapper).insert(paperSubjectCaptor.capture());
@@ -164,6 +190,7 @@ class RandomServiceImplTest {
         assertEquals("2", step.getTiptype());
         assertEquals("type-1", step.getTypeid());
         assertEquals("know-1", step.getKnowid());
+        assertEquals("", step.getPcontent());
     }
 
     private static ExamRandomItem item(String name) {

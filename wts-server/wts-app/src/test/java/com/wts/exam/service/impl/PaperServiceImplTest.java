@@ -68,6 +68,11 @@ class PaperServiceImplTest {
         assertEquals("期末试卷", paper.getName());
         assertEquals("type-1", paper.getExamtypeid());
         assertEquals("1", paper.getPstate());
+        assertEquals("", paper.getPcontent());
+        assertEquals("teacher-1", paper.getCuser());
+        assertEquals("Teacher One", paper.getCusername());
+        assertEquals("teacher-1", paper.getEuser());
+        assertEquals("Teacher One", paper.getEusername());
         assertEquals(60, paper.getAdvicetime());
         assertEquals(0, paper.getSubjectnum());
         assertEquals(0, paper.getPointnum());
