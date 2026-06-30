@@ -133,7 +133,7 @@ public class PaperServiceImpl implements PaperService {
         ps.setPaperid(paperId);
         ps.setSubjectid(subjectId);
         ps.setVersionid(versionId != null ? versionId : subject.getVersionid());
-        ps.setChapterid(chapterId);
+        ps.setChapterid(resolveChapterId(paperId, chapterId));
         ps.setPoint(point != null ? point : 0);
         if (sort != null) {
             ps.setSort(sort);
@@ -147,10 +147,36 @@ public class PaperServiceImpl implements PaperService {
         // Update paper subject count
         ExamPaper paper = paperMapper.selectById(paperId);
         if (paper != null) {
-            paper.setSubjectnum(paper.getSubjectnum() + 1);
-            paper.setPointnum(paper.getPointnum() + ps.getPoint());
+            paper.setSubjectnum(safeInt(paper.getSubjectnum()) + 1);
+            paper.setPointnum(safeInt(paper.getPointnum()) + ps.getPoint());
             paperMapper.updateById(paper);
         }
+    }
+
+    private String resolveChapterId(String paperId, String chapterId) {
+        if (chapterId != null && !chapterId.isBlank()) {
+            return chapterId;
+        }
+
+        List<ExamPaperChapter> chapters = chapterMapper.selectList(new LambdaQueryWrapper<ExamPaperChapter>()
+                .eq(ExamPaperChapter::getPaperid, paperId)
+                .orderByAsc(ExamPaperChapter::getSort));
+        if (!chapters.isEmpty()) {
+            return chapters.get(0).getId();
+        }
+
+        ExamPaperChapter chapter = new ExamPaperChapter();
+        chapter.setId(UUID.randomUUID().toString().replace("-", ""));
+        chapter.setPaperid(paperId);
+        chapter.setName("默认章节");
+        chapter.setParentid("NONE");
+        chapter.setTreecode(chapter.getId());
+        chapter.setSort(1);
+        chapter.setStype("1");
+        chapter.setPtype("2");
+        chapter.setInitpoint(0);
+        chapterMapper.insert(chapter);
+        return chapter.getId();
     }
 
     @Override
@@ -213,5 +239,9 @@ public class PaperServiceImpl implements PaperService {
 
     private String valueOrEmpty(String value) {
         return value != null ? value : "";
+    }
+
+    private int safeInt(Integer value) {
+        return value != null ? value : 0;
     }
 }

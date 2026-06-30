@@ -114,6 +114,26 @@ class PaperServiceImplTest {
     }
 
     @Test
+    void addSubjectUsesFirstChapterWhenChapterIdMissing() {
+        ExamSubject subject = subject("subject-1", "version-current");
+        ExamPaper paper = paper("paper-1", 0, 0);
+        ExamPaperChapter chapter = new ExamPaperChapter();
+        chapter.setId("chapter-default");
+        when(subjectMapper.selectById("subject-1")).thenReturn(subject);
+        when(chapterMapper.selectList(any())).thenReturn(List.of(chapter));
+        when(paperSubjectMapper.selectCount(any())).thenReturn(0L);
+        when(paperMapper.selectById("paper-1")).thenReturn(paper);
+
+        service.addSubject("paper-1", "subject-1", null, null, null, 1);
+
+        ArgumentCaptor<ExamPaperSubject> paperSubjectCaptor = ArgumentCaptor.forClass(ExamPaperSubject.class);
+        verify(paperSubjectMapper).insert(paperSubjectCaptor.capture());
+        assertEquals("chapter-default", paperSubjectCaptor.getValue().getChapterid());
+        assertEquals(1, paper.getSubjectnum());
+        assertEquals(1, paper.getPointnum());
+    }
+
+    @Test
     void addSubjectRejectsMissingSubject() {
         when(subjectMapper.selectById("missing")).thenReturn(null);
 
