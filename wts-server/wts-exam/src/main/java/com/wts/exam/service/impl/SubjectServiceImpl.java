@@ -32,6 +32,8 @@ public class SubjectServiceImpl implements SubjectService {
     private final ExamSubjectVersionMapper versionMapper;
     private final ExamSubjectAnswerMapper answerMapper;
     private static final DateTimeFormatter FMT = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
+    private static final String SINGLE_CHOICE_TIPTYPE = "2";
+    private static final String RIGHT_ANSWER = "1";
 
     @Override
     public PageResult<ExamSubject> list(SubjectQueryDTO query) {
@@ -63,6 +65,8 @@ public class SubjectServiceImpl implements SubjectService {
     @Override
     @Transactional
     public ExamSubject create(SubjectDTO dto, String operatorId, String operatorName) {
+        validateAnswerRules(dto);
+
         String now = LocalDateTime.now().format(FMT);
         String subjectId = UUID.randomUUID().toString().replace("-", "");
         String versionId = UUID.randomUUID().toString().replace("-", "");
@@ -129,6 +133,7 @@ public class SubjectServiceImpl implements SubjectService {
     public ExamSubject update(String id, SubjectDTO dto, String operatorId, String operatorName) {
         ExamSubject subject = subjectMapper.selectById(id);
         if (subject == null) throw BizException.notFound("题目");
+        validateAnswerRules(dto);
 
         String now = LocalDateTime.now().format(FMT);
         String newVersionId = UUID.randomUUID().toString().replace("-", "");
@@ -222,5 +227,19 @@ public class SubjectServiceImpl implements SubjectService {
 
     private String valueOrDefault(String value, String defaultValue) {
         return value != null && !value.isBlank() ? value : defaultValue;
+    }
+
+    private void validateAnswerRules(SubjectDTO dto) {
+        if (dto == null || !SINGLE_CHOICE_TIPTYPE.equals(dto.getTiptype())) {
+            return;
+        }
+        long correctCount = dto.getAnswers() == null
+                ? 0
+                : dto.getAnswers().stream()
+                .filter(answer -> answer != null && RIGHT_ANSWER.equals(valueOrDefault(answer.getRightanswer(), "0")))
+                .count();
+        if (correctCount != 1) {
+            throw BizException.fail("单选题必须且只能设置一个正确答案");
+        }
     }
 }

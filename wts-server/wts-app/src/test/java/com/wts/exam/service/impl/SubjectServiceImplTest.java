@@ -93,6 +93,36 @@ class SubjectServiceImplTest {
     }
 
     @Test
+    void createRejectsSingleChoiceWithMultipleCorrectAnswers() {
+        SubjectDTO dto = subjectDto();
+        dto.setAnswers(List.of(
+                answerDto("A", "1", 1),
+                answerDto("B", "1", 2)
+        ));
+
+        BizException error = assertThrows(BizException.class,
+                () -> service.create(dto, "teacher-1", "Teacher One"));
+
+        assertEquals("单选题必须且只能设置一个正确答案", error.getMessage());
+        verifyNoInteractions(subjectMapper, versionMapper, answerMapper);
+    }
+
+    @Test
+    void createRejectsSingleChoiceWithoutCorrectAnswer() {
+        SubjectDTO dto = subjectDto();
+        dto.setAnswers(List.of(
+                answerDto("A", "0", 1),
+                answerDto("B", "0", 2)
+        ));
+
+        BizException error = assertThrows(BizException.class,
+                () -> service.create(dto, "teacher-1", "Teacher One"));
+
+        assertEquals("单选题必须且只能设置一个正确答案", error.getMessage());
+        verifyNoInteractions(subjectMapper, versionMapper, answerMapper);
+    }
+
+    @Test
     void updateCreatesNewVersionAndKeepsExistingFieldsWhenDtoDoesNotOverrideThem() {
         ExamSubject subject = subject("subject-1", "old-version");
         when(subjectMapper.selectById("subject-1")).thenReturn(subject);
@@ -120,6 +150,25 @@ class SubjectServiceImplTest {
         ArgumentCaptor<ExamSubjectAnswer> answerCaptor = ArgumentCaptor.forClass(ExamSubjectAnswer.class);
         verify(answerMapper).insert(answerCaptor.capture());
         assertEquals(subject.getVersionid(), answerCaptor.getValue().getVersionid());
+    }
+
+    @Test
+    void updateRejectsSingleChoiceWithMultipleCorrectAnswers() {
+        ExamSubject subject = subject("subject-1", "old-version");
+        when(subjectMapper.selectById("subject-1")).thenReturn(subject);
+        SubjectDTO dto = subjectDto();
+        dto.setAnswers(List.of(
+                answerDto("A", "1", 1),
+                answerDto("B", "1", 2)
+        ));
+
+        BizException error = assertThrows(BizException.class,
+                () -> service.update("subject-1", dto, "teacher-1", "Teacher One"));
+
+        assertEquals("单选题必须且只能设置一个正确答案", error.getMessage());
+        verify(versionMapper, never()).insert(any(ExamSubjectVersion.class));
+        verify(answerMapper, never()).insert(any(ExamSubjectAnswer.class));
+        verify(subjectMapper, never()).updateById(any(ExamSubject.class));
     }
 
     @Test

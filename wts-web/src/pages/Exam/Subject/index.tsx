@@ -32,6 +32,27 @@ const TIPTYPE_OPTIONS = [
   { value: '6', label: '附件题' },
 ];
 
+const SINGLE_CHOICE_TIPTYPE = '2';
+
+const countCorrectAnswers = (answers: any[] = []) =>
+  answers.filter((answer) => answer?.rightanswer === '1').length;
+
+const normalizeSingleChoiceAnswers = (answers: any[] = [], correctIndex?: number) => {
+  if (answers.length === 0) {
+    return answers;
+  }
+  const selectedIndex = typeof correctIndex === 'number'
+    ? correctIndex
+    : answers.findIndex((answer) => answer?.rightanswer === '1');
+  if (selectedIndex < 0) {
+    return answers;
+  }
+  return answers.map((answer, index) => ({
+    ...answer,
+    rightanswer: index === selectedIndex ? '1' : '0',
+  }));
+};
+
 const SubjectPage: React.FC = () => {
   const actionRef = useRef<ActionType>();
   const [modalOpen, setModalOpen] = useState(false);
@@ -109,20 +130,24 @@ const SubjectPage: React.FC = () => {
               try {
                 const res: any = await getSubject(record.id);
                 const { subject, version, answers } = res.data;
+                const tiptype = version?.tiptype || SINGLE_CHOICE_TIPTYPE;
+                const answerValues = (answers || []).map((a: any) => ({
+                  answer: a.answer,
+                  rightanswer: a.rightanswer || '0',
+                  pointweight: a.pointweight,
+                  answernote: a.answernote,
+                }));
                 setEditingSubject(record);
-                setSelectedTiptype(version?.tiptype || '2');
+                setSelectedTiptype(tiptype);
                 form.setFieldsValue({
                   typeid: subject.typeid,
                   tipstr: version?.tipstr || subject.introduction,
                   tipnote: version?.tipnote,
                   level: subject.level,
                   point: subject.point || 1,
-                  answers: (answers || []).map((a: any) => ({
-                    answer: a.answer,
-                    rightanswer: a.rightanswer || '0',
-                    pointweight: a.pointweight,
-                    answernote: a.answernote,
-                  })),
+                  answers: tiptype === SINGLE_CHOICE_TIPTYPE
+                    ? normalizeSingleChoiceAnswers(answerValues)
+                    : answerValues,
                 });
                 setModalOpen(true);
               } catch {
@@ -147,8 +172,28 @@ const SubjectPage: React.FC = () => {
     },
   ];
 
+  const handleTiptypeChange = (value: string) => {
+    setSelectedTiptype(value);
+    if (value === SINGLE_CHOICE_TIPTYPE) {
+      const answers = form.getFieldValue('answers') || [];
+      form.setFieldsValue({ answers: normalizeSingleChoiceAnswers(answers) });
+    }
+  };
+
+  const markSingleChoiceAnswer = (answerIndex: number) => {
+    const answers = form.getFieldValue('answers') || [];
+    form.setFieldsValue({
+      answers: normalizeSingleChoiceAnswers(answers, answerIndex),
+    });
+  };
+
   const handleOk = async () => {
     const values = await form.validateFields();
+    const answers = values.answers || [];
+    if (selectedTiptype === SINGLE_CHOICE_TIPTYPE && countCorrectAnswers(answers) !== 1) {
+      message.error('单选题必须且只能设置一个正确答案');
+      return;
+    }
     const dto = {
       typeid: values.typeid,
       tiptype: selectedTiptype,
@@ -225,7 +270,7 @@ const SubjectPage: React.FC = () => {
             onClick={() => {
               setEditingSubject(null);
               form.resetFields();
-              setSelectedTiptype('2');
+              setSelectedTiptype(SINGLE_CHOICE_TIPTYPE);
               setModalOpen(true);
             }}
           >
@@ -316,7 +361,7 @@ const SubjectPage: React.FC = () => {
             />
           </Form.Item>
           <Form.Item label="题型" required>
-            <Select value={selectedTiptype} onChange={setSelectedTiptype}>
+            <Select value={selectedTiptype} onChange={handleTiptypeChange}>
               {TIPTYPE_OPTIONS.map((o) => (
                 <Select.Option key={o.value} value={o.value}>{o.label}</Select.Option>
               ))}
@@ -362,7 +407,14 @@ const SubjectPage: React.FC = () => {
                           name={[name, 'rightanswer']}
                           initialValue="0"
                         >
-                          <Select style={{ width: 100 }}>
+                          <Select
+                            style={{ width: 100 }}
+                            onChange={(value) => {
+                              if (selectedTiptype === SINGLE_CHOICE_TIPTYPE && value === '1') {
+                                markSingleChoiceAnswer(name);
+                              }
+                            }}
+                          >
                             <Select.Option value="0">错误</Select.Option>
                             <Select.Option value="1">正确</Select.Option>
                           </Select>
